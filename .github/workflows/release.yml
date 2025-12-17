@@ -1,0 +1,45 @@
+name: Manual Production Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version (ej: 1.0.0)'
+        required: true
+
+jobs:
+  deploy-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      # --- PASO CRÍTICO: INYECCIÓN DE VERSIÓN ---
+      - name: Inject Version into Gradle
+        run: |
+          # Reemplaza la linea que empieza por version= con la version del input
+          sed -i "s/^version=.*$/version=${{ inputs.version }}/" gradle.properties
+          
+          # Verificación visual
+          cat gradle.properties
+
+      - name: Build JAR
+        run: ./gradlew jar
+
+      - name: Create Stable Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          name: "Release ${{ inputs.version }}"
+          prerelease: false
+          generate_release_notes: true
+          make_latest: true
+          files: build/libs/*.jar

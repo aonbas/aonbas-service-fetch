@@ -1,0 +1,1 @@
+rootProject.name = "aonbas-service-fetcher"
