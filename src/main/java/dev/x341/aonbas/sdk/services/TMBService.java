@@ -3,8 +3,10 @@ package dev.x341.aonbas.sdk.services;
 import com.google.gson.Gson;
 import dev.x341.aonbas.sdk.config.TMBConfig;
 import dev.x341.aonbas.sdk.dto.metro.realtime.MetroRealTimeResponse;
+import dev.x341.aonbas.sdk.dto.metro.schedule.MetroScheduleResponse;
 import dev.x341.aonbas.sdk.dto.metro.topology.line.MetroLinesResponse;
 import dev.x341.aonbas.sdk.dto.metro.topology.station.MetroStationsResponse;
+import dev.x341.aonbas.sdk.dto.metro.topology.station.interchange.MetroInterchangeTopology;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,12 +28,12 @@ public class TMBService {
 
     private <T> CompletableFuture<T> getAsync(String path, Class<T> classOfT) {
         HttpUrl url = HttpUrl.parse(BASE_URL + path).newBuilder()
+                .addQueryParameter("app_id", config.getAppId())
+                .addQueryParameter("app_key", config.getAppKey())
                 .build();
 
         Request request = new Request.Builder()
                 .url(url)
-                .addHeader("app_id", config.getAppId())
-                .addHeader("app_key", config.getAppKey())
                 .get()
                 .build();
 
@@ -85,14 +87,27 @@ public class TMBService {
         return getAsync("/transit/linies/metro/estacions", MetroStationsResponse.class);
     }
 
+    public CompletableFuture<MetroInterchangeTopology> getStationInterchanges(int lineId, int stationId) {
+        String path = String.format("/transit/linies/metro/%d/estacions/%d/corresp", lineId, stationId);
+
+        return getAsync(path, MetroInterchangeTopology.class);
+    }
+
     // ========================
     //        REAL TIME
     // ========================
 
     public CompletableFuture<MetroRealTimeResponse> getStationRealTime(int stationCode) {
-        // La API usa el parámetro ?estacions=122,123
         return getAsync("/itransit/metro/estacions?estacions=" + stationCode, MetroRealTimeResponse.class);
     }
 
+    // ========================
+    //        SCHEDULE
+    // ========================
+
+    public CompletableFuture<MetroScheduleResponse> getLineSchedule(int lineId) {
+        String path = String.format("/transit/linies/metro/%d/horaris", lineId);
+        return getAsync(path, MetroScheduleResponse.class);
+    }
 
 }
